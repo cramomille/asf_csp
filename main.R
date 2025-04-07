@@ -13,48 +13,77 @@ library(mapsf)
 ###############################################################################
 ############################################################### FONDS D'ALIETTE
 
-# Recuperation des fonds de reference
-load("C:/Users/Antoine Beroud/Desktop/rexplo/input/mar/donnees/AR01_geog_constante.RData")
-tabl_com <- d.comf.pass
-tabl_com <- tabl_com[, c(1,4)]
+# Recuperation des iris
+url <- "https://sharedocs.huma-num.fr/wl/?id=kCf9nksXJS27oCPM52J1L7yzE9hnp3Dr&mode=grid&download=1"
+iris <- st_read(url)
 
-# Recuperation des communes regroupees
+# Table de passage vers les iris regroupes
 load("C:/Users/Antoine Beroud/Desktop/rexplo/input/mar/donnees/AR02_maille_IRISr.RData")
-iris <- sf.irisr
-
-# Agregation en communes
-com <- aggregate(iris, by = list(iris$COMF_CODE_MULTI), FUN = function(x) x[1])
-com <- com[, c(1,7,10)]
-com <- st_as_sf(com)
-com <- st_transform(com, 2154)
-
-colnames(com)[1] <- "comar"
-
-summary(nchar(com$comar))
-
-# Decomposition des identifiants agreges en une liste
-list_id <- strsplit(com$comar, " \\| ")
-
-# Creation d'une table d'association entre chaque commune et son regroupement de communes
-tabl_id <- data.frame(
-  COMF_CODE = unlist(list_id),
-  comar = rep(com$comar, sapply(list_id, length))
-)
-
-summary(nchar(tabl_id$comar))
-
-# Creation d'une table de passage globale
-tabl <- merge(tabl_com, tabl_id, by = "COMF_CODE", all = TRUE)
-tabl <- tabl[, c(2,1,3)]
-# tabl <- tabl[!grepl("75056|13055|69123", tabl$COMF_CODE), ]
-
-# Suppression des donnees inutilisees
-rm(d.comf.app, d.comf.pass, d.irisf.pass, sf.comf, sf.irisf)
+tabl <- d.irisr.pass
 rm(d.irisr.app, d.irisr.etapes, d.irisr.pass, sf.irisr)
-rm(iris, com, list_id, tabl_com, tabl_id)
 
+iris <- merge(iris, tabl, by = "IRISF_CODE")
+
+irisar <- aggregate(iris, by = list(iris$IRISr_CODE), FUN = function(x) x[1])
+irisar <- irisar[, c(9,10)]
 
 ###############################################################################
-###############################################################################
+################################################################### PACKAGE ASF
 
-etetettttttttttttttttttttttttt
+# Traitement sur les donnees --------------------------------------------------
+data <- read.csv2("input/TableTypo15.csv")
+data <- data[, c(1, ncol(data))]
+
+data$IRISr <- ifelse(nchar(data$IRISr) == 8,
+                     paste0("0", data$IRISr),
+                     data$IRISr)
+
+# Creation du fond et des zooms -----------------------------------------------
+fond <- irisar
+
+zoom_created <- create_zoom(fond = fond,
+                            villes = c("Paris", "Marseille", "Lyon", "Toulouse", "Nantes", "Montpellier",
+                                       "Bordeaux", "Lille", "Rennes", "Reims", "Dijon","Strasbourg",
+                                       "Angers", "Grenoble", "Clermont-Ferrand", "Tours", "Perpignan",
+                                       "Besancon", "Rouen", "La Rochelle", "Le Havre", "Nice", "Mulhouse"
+                            ),
+                            buffer = 10000)
+
+zooms <- zoom_created$zooms
+labels <- zoom_created$labels
+
+fond <- simplify_geom(fond, keep = 0.1)
+
+fondata <- merge_fondata(data = data,
+                         fond = fond,
+                         zoom = zooms,
+                         id = c("IRISr", "IRISr_CODE"))
+
+palette <- c("1" = "#94282f",
+             "2" = "#e40521",
+             "3" = "#f28a3d",
+             "4" = "#f9b342",
+             "5" = "#ffdf43",
+             "6" = "#ffec8d",
+             "7" = "#bbd043",
+             "8" = "#3fb498",
+             "9" = "#bee2e9",
+             "10" = "#86c2eb",
+             "11" = "#92c56e",
+             "12" = "#2581c4",
+             "13" = "#50af47",
+             "14" = "#7c6eb0",
+             "15" = "#554596"
+             )
+
+mf_map(fondata,
+       var = "clust15", 
+       type = "typo",
+       pal = palette,
+       border = NA)
+
+
+
+
+
+
