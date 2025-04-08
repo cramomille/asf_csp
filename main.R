@@ -45,6 +45,7 @@ iris <- iris[, c(1,2,7)]
 colnames(iris) <- c("IRIS_CODE", "IRIS_LIB", "P21_POP", "geometry")
 st_geometry(iris) <- "geometry"
 iris <- st_transform(iris, 2154)
+iris <- iris[!grepl("^975|^977|^978|^98|^N|^P", iris$IRIS_CODE), ]
 
 # Ouverture du fichier avec toutes les iris pour ajouter Mayotte
 mayo <- st_read("C:/Users/Antoine Beroud/Desktop/rexplo/input/mar/donnees/shapefiles/AR01_sf_irisf.shp")
