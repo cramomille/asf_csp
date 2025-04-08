@@ -14,18 +14,18 @@ library(mapsf)
 ############################################################### FONDS D'ALIETTE
 
 # Recuperation des iris
-url <- "https://sharedocs.huma-num.fr/wl/?id=kCf9nksXJS27oCPM52J1L7yzE9hnp3Dr&mode=grid&download=1"
+url <- "https://sharedocs.huma-num.fr/wl/?id=Ho4XQWuOU2DLt7ppdE1Set3x3gsL3QbO&mode=grid&download=1"
 iris <- st_read(url)
 
-# Table de passage vers les iris regroupes
-load("C:/Users/Antoine Beroud/Desktop/rexplo/input/mar/donnees/AR02_maille_IRISr.RData")
-tabl <- d.irisr.pass
-rm(d.irisr.app, d.irisr.etapes, d.irisr.pass, sf.irisr)
-
-iris <- merge(iris, tabl, by = "IRISF_CODE")
-
-irisar <- aggregate(iris, by = list(iris$IRISr_CODE), FUN = function(x) x[1])
-irisar <- irisar[, c(9,10)]
+# # Table de passage vers les iris regroupes
+# load("C:/Users/Antoine Beroud/Desktop/rexplo/input/mar/donnees/AR02_maille_IRISr.RData")
+# tabl <- d.irisr.pass
+# rm(d.irisr.app, d.irisr.etapes, d.irisr.pass, sf.irisr)
+# 
+# iris <- merge(iris, tabl, by = "IRIS_CODE")
+# 
+# irisar <- aggregate(iris, by = list(iris$IRISr_CODE), FUN = function(x) x[1])
+# irisar <- irisar[, c(9,10)]
 
 ###############################################################################
 ################################################################### PACKAGE ASF
@@ -39,7 +39,7 @@ data$IRISr <- ifelse(nchar(data$IRISr) == 8,
                      data$IRISr)
 
 # Creation du fond et des zooms -----------------------------------------------
-fond <- irisar
+fond <- iris
 
 zoom_created <- create_zoom(fond = fond,
                             villes = c("Paris", "Marseille", "Lyon", "Toulouse", "Nantes", "Montpellier",
@@ -57,7 +57,7 @@ fond <- simplify_geom(fond, keep = 0.1)
 fondata <- merge_fondata(data = data,
                          fond = fond,
                          zoom = zooms,
-                         id = c("IRISr", "IRISr_CODE"))
+                         id = c("IRISr", "IRIS_CODE"))
 
 palette <- c("1" = "#94282f",
              "2" = "#e40521",
@@ -83,6 +83,7 @@ mf_map(fondata,
        border = NA)
 
 
+st_write(fondata, "test.gpkg")
 
 
 
