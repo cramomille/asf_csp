@@ -113,7 +113,7 @@ mf_map(fondata,
        pal = palette,
        border = NA)
 
-st_write(fond, "testeoeo.gpkg")
+
 
 
 
