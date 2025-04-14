@@ -13,97 +13,82 @@ library(mapsf)
 ###############################################################################
 ############################################################### FONDS D'ALIETTE
 
-# # Recuperation des iris
-# url <- "https://sharedocs.huma-num.fr/wl/?id=Ho4XQWuOU2DLt7ppdE1Set3x3gsL3QbO&mode=grid&download=1"
-# iris <- st_read(url)
-# 
-# # Table de passage vers les iris regroupes
-# load("C:/Users/Antoine Beroud/Desktop/rexplo/input/mar/donnees/AR02_maille_IRISr.RData")
-# tabl <- d.irisr.pass
-# rm(d.irisr.app, d.irisr.etapes, d.irisr.pass, sf.irisr)
-# 
-# iris <- merge(iris, tabl, by = "IRIS_CODE")
-# 
-# irisar <- aggregate(iris, by = list(iris$IRISr_CODE), FUN = function(x) x[1])
-# irisar <- irisar[, c(9,10)]
+# Ouverture du fichier des iris
+mar <- asf_mar()
+
+# Selection des iris
+iris <- mar$geom$irisrd
+iris <- iris[, c(1,2,7)]
+colnames(iris) <- c("IRIS_CODE", "IRIS_LIB", "P21_POP", "geometry")
+st_geometry(iris) <- "geometry"
+
+# Selection des iris de Mayotte
+mayo <- mar$geom$irisf
+mayo <- mayo[grepl("^976", mayo$IRISF_CODE), ]
+mayo$P21_POP <- NA
+mayo$P21_POP <- as.numeric(mayo$P21_POP)
+mayo <- mayo[, c(1,2,7)]
+colnames(mayo) <- c("IRIS_CODE", "IRIS_LIB", "P21_POP", "geometry")
+st_geometry(mayo) <- "geometry"
+
+# Collage des deux objets sf/data.frames
+fond <- rbind(iris, mayo)
+
+# Repositionnement des geometries des DROM
+fond <- asf_drom(fond, id = "IRIS_CODE")
+
 
 ###############################################################################
-################################################################### PACKAGE ASF
+######################################################### NETTOYAGE DES DONNEES
 
-# Traitement sur les donnees --------------------------------------------------
+# Telechargement des donnees 
 data <- read.csv2("input/TableTypo15.csv")
 data <- data[, c(1, ncol(data))]
 
+# Ajout des zeros manquants dans les identifiants
 data$IRISr <- ifelse(nchar(data$IRISr) == 8,
                      paste0("0", data$IRISr),
                      data$IRISr)
 
-# Creation du fond et des zooms -----------------------------------------------
-# Ouverture du fichier des iris
-iris <- st_read("input/iris.gpkg")
-iris <- iris[, c(1,2,7)]
-colnames(iris) <- c("IRIS_CODE", "IRIS_LIB", "P21_POP", "geometry")
-st_geometry(iris) <- "geometry"
-iris <- st_transform(iris, 2154)
-iris <- iris[!grepl("^975|^977|^978|^98|^N|^P", iris$IRIS_CODE), ]
 
-# Ouverture du fichier avec toutes les iris pour ajouter Mayotte
-mayo <- st_read("C:/Users/Antoine Beroud/Desktop/rexplo/input/mar/donnees/shapefiles/AR01_sf_irisf.shp")
-mayo <- st_as_sf(mayo)
-mayo <- st_transform(mayo, 2154)
-
-mayo <- mayo[grepl("^976", mayo$IRISF_CODE), ]
-
-mayo$P21_POP <- NA
-mayo$P21_POP <- as.numeric(mayo$P21_POP)
-
-mayo <- mayo[, c(1,2,7)]
-colnames(mayo) <- c("IRIS_CODE", "IRIS_LIB", "P21_POP", "geometry")
-st_geometry(mayo) <- "geometry"
-mayo <- st_transform(mayo, 2154)
-
-# Collage des deux data.frames
-fond <- rbind(iris, mayo)
-
-# Repositionnement des geometries des DROM
-fond <- create_fond(fond, id = "IRIS_CODE")
+###############################################################################
+######################################## UTILISATION DES AUTRES FONCTIONS D'ASF
 
 # Creation des zooms
-zoom_created <- create_zoom(fond = fond,
-                            villes = c("Paris", "Marseille", "Lyon", "Toulouse", "Nantes", "Montpellier",
-                                       "Bordeaux", "Lille", "Rennes", "Reims", "Dijon","Strasbourg",
-                                       "Angers", "Grenoble", "Clermont-Ferrand", "Tours", "Perpignan",
-                                       "Besancon", "Rouen", "La Rochelle", "Le Havre", "Nice", "Mulhouse"
-                            ),
-                            buffer = 10000)
+zoom <- asf_zoom(fond = fond,
+                 villes = c("Paris", "Marseille", "Lyon", "Toulouse", "Nantes", "Montpellier",
+                            "Bordeaux", "Lille", "Rennes", "Reims", "Dijon","Strasbourg",
+                            "Angers", "Grenoble", "Clermont-Ferrand", "Tours", "Perpignan",
+                            "Besancon", "Rouen", "La Rochelle", "Le Havre", "Nice", "Mulhouse"
+                 ),
+                 buffer = 10000)
 
-zooms <- zoom_created$zooms
-labels <- zoom_created$labels
+zooms <- zoom$zooms
+labels <- zoom$labels
 
 # Simplification des geometries du fond de carte principal
-fond <- simplify_geom(fond, keep = 0.1)
+fond <- asf_simplify(fond, keep = 0.1)
 
 # Jointure entre le fond et les donnees
-fondata <- merge_fondata(data = data,
-                         fond = fond,
-                         zoom = zooms,
-                         id = c("IRISr", "IRIS_CODE"))
+fondata <- asf_fondata(data = data,
+                       fond = fond,
+                       zoom = zooms,
+                       id = c("IRISr", "IRIS_CODE"))
 
-
-palette <- c("1" = "#94282f",
-             "2" = "#e40521",
-             "3" = "#f28a3d",
-             "4" = "#f9b342",
-             "5" = "#ffdf43",
-             "6" = "#ffec8d",
-             "7" = "#bbd043",
-             "8" = "#3fb498",
-             "9" = "#bee2e9",
+palette <- c("01" = "#94282f",
+             "02" = "#e40521",
+             "03" = "#f07f3c",
+             "04" = "#f7a941",
+             "05" = "#ffd744",
+             "06" = "#ffeea4",
+             "07" = "#bbd043",
+             "08" = "#6cbe99",
+             "09" = "#bee2e9",
              "10" = "#86c2eb",
-             "11" = "#50af47",
+             "11" = "#04a64b",
              "12" = "#2581c4",
-             "13" = "#92c56e",
-             "14" = "#7c6eb0",
+             "13" = "#aad29a",
+             "14" = "#8779b7",
              "15" = "#554596"
              )
 
@@ -117,4 +102,9 @@ mf_map(fondata,
 
 
 
+test <- fond[grepl("^69", fond$IRIS_CODE), ]
+
+carto <- asf_cartogram(test, var = "P21_POP", min = 2000)
+
+mf_map(carto)
 
