@@ -1,19 +1,19 @@
 
-#                                 EXPLORATIONS POUR LA PLANCHE SUR L'IMMOBILIER
+#                                      EXPLORATIONS POUR LA PLANCHE SUR LES CSP
 #
 #                                                                antoine beroud
 #                                                                  jean riviere
 #                                                                  aliette roux
 
 library(sf)
-library(asf)
 library(mapsf)
+library(asf)
 
 
 ###############################################################################
-############################################################### FONDS D'ALIETTE
+########################################################## FONDS D'ALIETTE ROUX
 
-# Ouverture du fichier des iris
+# Ouverture des fichiers d'Aliette
 mar <- asf_mar()
 
 # Selection des iris
@@ -22,20 +22,10 @@ iris <- iris[, c(1,2,7)]
 colnames(iris) <- c("IRIS_CODE", "IRIS_LIB", "P21_POP", "geometry")
 st_geometry(iris) <- "geometry"
 
-# Selection des iris de Mayotte
-mayo <- mar$geom$irisf
-mayo <- mayo[grepl("^976", mayo$IRISF_CODE), ]
-mayo$P21_POP <- NA
-mayo$P21_POP <- as.numeric(mayo$P21_POP)
-mayo <- mayo[, c(1,2,7)]
-colnames(mayo) <- c("IRIS_CODE", "IRIS_LIB", "P21_POP", "geometry")
-st_geometry(mayo) <- "geometry"
-
-# Collage des deux objets sf/data.frames
-fond <- rbind(iris, mayo)
-
 # Repositionnement des geometries des DROM
-fond <- asf_drom(fond, id = "IRIS_CODE")
+fond <- asf_drom(iris, id = "IRIS_CODE")
+
+dep <- asf_dep(fond, id = "IRIS_CODE")
 
 
 ###############################################################################
@@ -55,16 +45,16 @@ data$IRISr <- ifelse(nchar(data$IRISr) == 8,
 ######################################## UTILISATION DES AUTRES FONCTIONS D'ASF
 
 # Creation des zooms
-zoom <- asf_zoom(fond = fond,
-                 villes = c("Paris", "Marseille", "Lyon", "Toulouse", "Nantes", "Montpellier",
-                            "Bordeaux", "Lille", "Rennes", "Reims", "Dijon","Strasbourg",
-                            "Angers", "Grenoble", "Clermont-Ferrand", "Tours", "Perpignan",
-                            "Besancon", "Rouen", "La Rochelle", "Le Havre", "Nice", "Mulhouse"
-                 ),
-                 buffer = 10000)
+z <- asf_zoom(fond = fond,
+              villes = c("Paris", "Marseille", "Lyon", "Toulouse", "Nantes", "Montpellier",
+                         "Bordeaux", "Lille", "Rennes", "Reims", "Dijon","Strasbourg",
+                         "Angers", "Grenoble", "Clermont-Ferrand", "Tours", "Perpignan",
+                         "Besancon", "Rouen", "La Rochelle", "Le Havre", "Nice", "Mulhouse"
+              ),
+              buffer = 10000)
 
-zooms <- zoom$zooms
-labels <- zoom$labels
+zoom <- z$zoom
+label <- z$label
 
 # Simplification des geometries du fond de carte principal
 fond <- asf_simplify(fond, keep = 0.1)
@@ -72,7 +62,7 @@ fond <- asf_simplify(fond, keep = 0.1)
 # Jointure entre le fond et les donnees
 fondata <- asf_fondata(data = data,
                        fond = fond,
-                       zoom = zooms,
+                       zoom = zoom,
                        id = c("IRISr", "IRIS_CODE"))
 
 palette <- c("01" = "#94282f",
@@ -98,13 +88,59 @@ mf_map(fondata,
        pal = palette,
        border = NA)
 
+mf_label(label, 
+         var = "nom", 
+         col = "#000000", 
+         font = 1)
+
+mf_map(dep, 
+       col = "white", 
+       lwd = 1, 
+       add = TRUE)
+
+
+###############################################################################
+mar <- asf_mar(sf = FALSE)
+
+# Telechargement des donnees 
+data <- read.csv2("input/TableTypo15.csv")
+data <- data[, c(1, ncol(data))]
+
+# Ajout des zeros manquants dans les identifiants
+data$IRISr <- ifelse(nchar(data$IRISr) == 8,
+                     paste0("0", data$IRISr),
+                     data$IRISr)
+tmp <- data
+
+tabl <- mar$ar02$d.irisr.app
+tmp <- merge(tmp, tabl, by.x = "IRISr", by.y = "IRISrD_CODE", all.x = TRUE)
+tmp <- tmp[, c(1, 2, 24:27)]
+
+tmp$clust15 <- as.character(tmp$clust15)
+
+paramx <- c("1", "2", "3", "4", "5", "6",
+            "7", "8", "11", "13",
+            "9", "10",  "12",
+            "14", "15")
+paramy <- c("0", "1", "2", "3", "4", "5")
+palette <- c("#554596","#8779b7",
+             "#2581c4","#86c2eb","#bee2e9",
+             "#aad29a","#04a64b","#6cbe99","#bbd043",
+             "#ffeea4","#ffd744","#f7a941","#f07f3c","#e40521","#94282f")
 
 
 
+asf_plotypo(data = tmp,
+            vars = "clust15",
+            typo = "TAAV2017", 
+            order_vars = paramx, 
+            order_typo = paramy, 
+            pal = palette
+            )
 
-test <- fond[grepl("^69", fond$IRIS_CODE), ]
-
-carto <- asf_cartogram(test, var = "P21_POP", min = 2000)
-
-mf_map(carto)
-
+asf_plotvar(data = tmp, 
+            vars = "clust15", 
+            typo = "TAAV2017",
+            order_vars = paramx, 
+            order_typo = paramy
+            )
