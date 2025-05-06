@@ -17,7 +17,7 @@ library(asf)
 mar <- asf_mar()
 
 # Selection des iris
-iris <- mar$geom$irisrd
+iris <- mar$ar02$sf.irisr.d
 iris <- iris[, c(1,2,7)]
 colnames(iris) <- c("IRIS_CODE", "IRIS_LIB", "P21_POP", "geometry")
 st_geometry(iris) <- "geometry"
@@ -49,8 +49,7 @@ z <- asf_zoom(fond = fond,
               villes = c("Paris", "Marseille", "Lyon", "Toulouse", "Nantes", "Montpellier",
                          "Bordeaux", "Lille", "Rennes", "Reims", "Dijon","Strasbourg",
                          "Angers", "Grenoble", "Clermont-Ferrand", "Tours", "Perpignan",
-                         "Besancon", "Rouen", "La Rochelle", "Le Havre", "Nice", "Mulhouse"
-              ),
+                         "Besancon", "Rouen", "La Rochelle", "Le Havre", "Nice", "Mulhouse"),
               buffer = 10000)
 
 zoom <- z$zoom
@@ -97,6 +96,8 @@ mf_map(dep,
        col = "white", 
        lwd = 1, 
        add = TRUE)
+
+
 
 
 ###############################################################################
