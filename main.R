@@ -25,8 +25,6 @@ st_geometry(iris) <- "geometry"
 # Repositionnement des geometries des DROM
 fond <- asf_drom(iris, id = "IRIS_CODE")
 
-dep <- asf_dep(fond, id = "IRIS_CODE")
-
 
 ###############################################################################
 ######################################################### NETTOYAGE DES DONNEES
@@ -45,24 +43,33 @@ data$IRISr <- ifelse(nchar(data$IRISr) == 8,
 ######################################## UTILISATION DES AUTRES FONCTIONS D'ASF
 
 # Creation des zooms
-z <- asf_zoom(fond = fond,
-              villes = c("Paris", "Marseille", "Lyon", "Toulouse", "Nantes", "Montpellier",
+z <- asf_zoom(fond,
+              places = c("Paris", "Marseille", "Lyon", "Toulouse", "Nantes", "Montpellier",
                          "Bordeaux", "Lille", "Rennes", "Reims", "Dijon","Strasbourg",
                          "Angers", "Grenoble", "Clermont-Ferrand", "Tours", "Perpignan",
                          "Besancon", "Rouen", "La Rochelle", "Le Havre", "Nice", "Mulhouse"),
-              buffer = 10000)
+              r = 10000)
 
-zoom <- z$zoom
-label <- z$label
+zoom <- z$zooms
+label <- z$labels
+point <- z$points
 
 # Simplification des geometries du fond de carte principal
 fond <- asf_simplify(fond, keep = 0.1)
 
 # Jointure entre le fond et les donnees
-fondata <- asf_fondata(data = data,
-                       fond = fond,
-                       zoom = zoom,
-                       id = c("IRISr", "IRIS_CODE"))
+fondata <- asf_fondata(f = fond,
+                       z = zoom,
+                       d = data,
+                       by.x = "IRIS_CODE",
+                       by.y = "IRISr")
+
+# Creation des limites departementales
+dep <- fond
+dep$DEP_CODE <- substr(dep$IRIS_CODE, 1, 2)
+dep <- asf_borders(dep,
+                   by = "DEP_CODE", 
+                   keep = 0.05)
 
 palette <- c("01" = "#94282f",
              "02" = "#e40521",
@@ -87,18 +94,35 @@ mf_map(fondata,
        pal = palette,
        border = NA)
 
-mf_label(label, 
-         var = "nom", 
-         col = "#000000", 
-         font = 1)
-
 mf_map(dep, 
        col = "white", 
        lwd = 1, 
        add = TRUE)
 
+mf_map(point,
+       add = TRUE)
 
+mf_label(label, 
+         var = "label", 
+         col = "#000000", 
+         font = 1)
 
+mf_label(point, 
+         var = "label", 
+         col = "#000000", 
+         font = 1)
+
+# fondata$COM_CODE <- substr(fondata$IRIS_CODE, 1, 5)
+# 
+# com <- aggregate(fondata, 
+#                  by = list(fondata$COM_CODE),
+#                  FUN = function(x) x[1])
+# 
+# mf_map(com, 
+#        col = NA,
+#        border = "red",
+#        lwd = 1, 
+#        add = TRUE)
 
 ###############################################################################
 mar <- asf_mar(sf = FALSE)
