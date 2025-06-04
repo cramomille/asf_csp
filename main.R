@@ -1,19 +1,17 @@
 
-#                                      EXPLORATIONS POUR LA PLANCHE SUR LES CSP
+#                                        ASF - SCRIPT DE LA PLANCHE SUR LES CSP
 #
 #                                                                antoine beroud
 #                                                                  jean riviere
-#                                                                  aliette roux
 
 library(sf)
-library(mapsf)
 library(asf)
-
+library(mapsf)
 
 ###############################################################################
 ########################################################## FONDS D'ALIETTE ROUX
 
-# Ouverture des fichiers d'Aliette
+# Lecture des fichiers
 mar <- asf_mar()
 
 # Selection des iris
